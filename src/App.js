@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { hierarchy, tree, selection } from "d3";
+import { hierarchy, tree } from "d3";
 import "./App.css";
 import BinarySearchTree from "./logic/BinarySearchTree";
 
@@ -15,7 +15,7 @@ class App extends Component {
 
   preOrderTraverse() {
     let str = "";
-    this.state.bst.preOrderTraverse(nodeValue => (str += nodeValue + ' '));
+    this.state.bst.preOrderTraverse(nodeValue => (str += nodeValue + " "));
     this.setState({
       outputStr: str
     });
@@ -23,7 +23,7 @@ class App extends Component {
 
   postOrderTraverse() {
     let str = "";
-    this.state.bst.postOrderTraverse(nodeValue => (str += nodeValue + ' '));
+    this.state.bst.postOrderTraverse(nodeValue => (str += nodeValue + " "));
     this.setState({
       outputStr: str
     });
@@ -31,7 +31,7 @@ class App extends Component {
 
   inOrderTraverse() {
     let str = "";
-    this.state.bst.inOrderTraverse(nodeValue => (str += nodeValue + ' '));
+    this.state.bst.inOrderTraverse(nodeValue => (str += nodeValue + " "));
     this.setState({
       outputStr: str
     });
@@ -44,9 +44,6 @@ class App extends Component {
   }
 
   drawVerticalTree(treeData) {
-    document
-      .querySelectorAll(".bstVm")
-      .forEach(e => e.parentNode.removeChild(e));
     const margin = { top: 40, right: 120, bottom: 20, left: 120 };
     const width = 960 - margin.right - margin.left;
     const height = 300 - margin.top - margin.bottom;
@@ -57,53 +54,41 @@ class App extends Component {
       return [];
     });
     nodes = treemap(nodes);
+    nodes = nodes.descendants().filter(e => Object.keys(e.data).length);
 
-    const svg = selection("body")
-      .append("svg")
-      .attr("class", "bstVm")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom);
-
-    const g = svg
-      .append("g")
-      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    // adds the links between the nodes
-    g.selectAll(".link")
-      .data(
-        nodes
-          .descendants()
-          .slice(1)
-          .filter(e => Object.keys(e.data).length)
-      )
-      .enter()
-      .append("path")
-      .attr("class", "link")
-      .attr(
-        "d",
-        d => `
-      M ${d.x}, ${d.y}
-      L ${d.parent.x} ${d.parent.y}
-      `
-      );
-    const node = g
-      .selectAll(".node")
-      .data(() => nodes.descendants().filter(e => Object.keys(e.data).length))
-      .enter()
-      .append("g")
-      .attr("class", () => "node")
-      .attr("transform", d => "translate(" + d.x + "," + d.y + ")");
-    // .on("click", handleNodeClick);
-
-    // adds the circle to the node
-    node.append("circle").attr("r", 15);
-
-    // adds the text to the node
-    node
-      .append("text")
-      .attr("dy", ".35em")
-      .style("text-anchor", "middle")
-      .text(d => d.data.value);
+    const genPaths = () => {
+      return nodes.slice(1).map(data => (
+        <path
+          key={data.id}
+          className="link"
+          d={`
+          M ${data.x}, ${data.y}
+          L ${data.parent.x} ${data.parent.y}
+        `}
+        />
+      ));
+    };
+    const genNodes = () => {
+      return nodes.map(data => (
+        <g className="node" key={data.id} transform={`translate(${data.x},${data.y})`}>
+          <circle r="15" />
+          <text dy=".35em" style={{ textAnchor: "middle" }}>
+            {data.value}
+          </text>
+        </g>
+      ));
+    };
+    return (
+      <svg
+        width={width + margin.left + margin.right}
+        height={height + margin.top + margin.bottom}
+      >
+        <g transform={`translate(${margin.left},${margin.top})`}>
+          {genPaths()}
+          {genNodes()}
+        </g>
+      </svg>
+    );
   }
 
   changeInputData(value) {
@@ -122,7 +107,6 @@ class App extends Component {
       if (data && !Number.isNaN(+data)) splitNodes.push(+data);
     });
     this.state.bst.insertNodes(splitNodes);
-    this.drawVerticalTree(this.state.bst.root);
     this.setState({
       inputData: ""
     });
@@ -133,7 +117,6 @@ class App extends Component {
     this.setState({
       bst: bstTree
     });
-    this.drawVerticalTree(bstTree.root);
   }
 
   render() {
@@ -172,6 +155,7 @@ class App extends Component {
             </span>
           )}
         </div>
+        {this.state.bst && this.drawVerticalTree(this.state.bst.root)}
       </div>
     );
   }
