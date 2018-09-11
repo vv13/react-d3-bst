@@ -4,18 +4,19 @@ import "./App.css";
 import BinarySearchTree from "./logic/BinarySearchTree";
 
 class App extends Component {
+  bst = null;
   constructor(props) {
     super(props);
     this.state = {
-      bst: null,
       inputData: "",
-      outputStr: ""
+      outputStr: "",
+      nodes: [4, 2, 1, 5, 8, 3]
     };
   }
 
   preOrderTraverse() {
     let str = "";
-    this.state.bst.preOrderTraverse(nodeValue => (str += nodeValue + " "));
+    this.bst.preOrderTraverse(nodeValue => (str += nodeValue + " "));
     this.setState({
       outputStr: str
     });
@@ -23,7 +24,7 @@ class App extends Component {
 
   postOrderTraverse() {
     let str = "";
-    this.state.bst.postOrderTraverse(nodeValue => (str += nodeValue + " "));
+    this.bst.postOrderTraverse(nodeValue => (str += nodeValue + " "));
     this.setState({
       outputStr: str
     });
@@ -31,30 +32,35 @@ class App extends Component {
 
   inOrderTraverse() {
     let str = "";
-    this.state.bst.inOrderTraverse(nodeValue => (str += nodeValue + " "));
+    this.bst.inOrderTraverse(nodeValue => (str += nodeValue + " "));
     this.setState({
       outputStr: str
     });
   }
+
   clearBst() {
-    document
-      .querySelectorAll(".bstVm")
-      .forEach(e => e.parentNode.removeChild(e));
-    this.state.bst.clear();
+    this.setState({
+      nodes: []
+    });
+    this.bst.clear();
   }
 
-  drawVerticalTree(treeData) {
+  drawVerticalTree(nodeArrs) {
+    this.bst = new BinarySearchTree(nodeArrs);
+    if (!this.bst.root) return <span />;
+
     const margin = { top: 40, right: 120, bottom: 20, left: 120 };
     const width = 960 - margin.right - margin.left;
     const height = 300 - margin.top - margin.bottom;
 
     const treemap = tree().size([width, height]);
-    let nodes = hierarchy(treeData, d => {
+    let nodes = hierarchy(this.bst.root, d => {
       if (d.left || d.right) return [d.left || {}, d.right || {}];
       return [];
     });
-    nodes = treemap(nodes);
-    nodes = nodes.descendants().filter(e => Object.keys(e.data).length);
+    nodes = treemap(nodes)
+      .descendants()
+      .filter(e => Object.keys(e.data).length);
 
     const genPaths = () => {
       return nodes.slice(1).map(data => (
@@ -68,9 +74,14 @@ class App extends Component {
         />
       ));
     };
+
     const genNodes = () => {
       return nodes.map(data => (
-        <g className="node" key={data.id} transform={`translate(${data.x},${data.y})`}>
+        <g
+          className="node"
+          key={data.id}
+          transform={`translate(${data.x},${data.y})`}
+        >
           <circle r="15" />
           <text dy=".35em" style={{ textAnchor: "middle" }}>
             {data.value}
@@ -78,6 +89,7 @@ class App extends Component {
         </g>
       ));
     };
+
     return (
       <svg
         width={width + margin.left + margin.right}
@@ -106,56 +118,48 @@ class App extends Component {
     this.state.inputData.split(",").forEach(data => {
       if (data && !Number.isNaN(+data)) splitNodes.push(+data);
     });
-    this.state.bst.insertNodes(splitNodes);
+    this.bst.insertNodes(splitNodes);
     this.setState({
+      nodes: this.state.nodes.concat(splitNodes),
       inputData: ""
-    });
-  }
-
-  componentDidMount() {
-    const bstTree = new BinarySearchTree([4, 2, 1, 5, 8, 3]);
-    this.setState({
-      bst: bstTree
     });
   }
 
   render() {
     return (
       <div className="App">
-        <p className="App-intro" style={{ paddingLeft: "13px" }}>
-          Take what you can, give nothing back
-        </p>
-        <div className="toolbar">
-          <div className="toolbarLine">
-            <button onClick={() => this.clearBst()}>清空数据</button>
+        <div class="container">
+          <div className="toolbar">
+            <div className="toolbarLine">
+              <input
+                class="appInput"
+                type="text"
+                placeholder="以,隔开数字"
+                value={this.state.inputData}
+                onChange={evt => this.changeInputData(evt.target.value)}
+              />
+              <button onClick={() => this.submitInputData()}>插入节点</button>
+              <button onClick={() => this.clearBst()}>清空数据</button>
+            </div>
+            <div className="toolbarLine">
+              <button onClick={() => this.preOrderTraverse()}>前序遍历</button>
+              <button onClick={() => this.inOrderTraverse()}>中序遍历</button>
+              <button onClick={() => this.postOrderTraverse()}>后序遍历</button>
+            </div>
           </div>
-          <div className="toolbarLine">
-            <input
-              type="text"
-              placeholder="以,隔开数字"
-              value={this.state.inputData}
-              onChange={evt => this.changeInputData(evt.target.value)}
-            />
-            <button onClick={() => this.submitInputData()}>插入节点</button>
-          </div>
-          <div className="toolbarLine">
-            <button onClick={() => this.preOrderTraverse()}>前序遍历</button>
-            <button onClick={() => this.inOrderTraverse()}>中序遍历</button>
-            <button onClick={() => this.postOrderTraverse()}>后序遍历</button>
-          </div>
+          <div class="appTree">{this.drawVerticalTree(this.state.nodes)}</div>
         </div>
-        <div className="fillData">
+        <div className="console">
           {this.state.outputStr}
           {this.state.outputStr && (
             <span
               style={{ paddingLeft: "10px", cursor: "pointer" }}
               onClick={() => this.setState({ outputStr: "" })}
             >
-              x
+              清空数据
             </span>
           )}
         </div>
-        {this.state.bst && this.drawVerticalTree(this.state.bst.root)}
       </div>
     );
   }
